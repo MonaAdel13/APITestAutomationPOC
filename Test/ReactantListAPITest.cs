@@ -1,6 +1,7 @@
 ﻿using NeuroLIM_APITesing.Common;
 using NeuroLIM_APITesing.Requests;
 using NeuroLIM_APITesing.Responses;
+using NLog;
 using NUnit.Framework;
 using RestSharp;
 using RestSharp.Serialization.Json;
@@ -19,6 +20,10 @@ namespace NeuroLIM_APITesing.Test
         private int NewlyCreatedReactantList;
 
        private Random random = new Random();
+
+       private static Logger log = LogManager.GetCurrentClassLogger();
+ 
+
         //     [SetUp]
         //        public void SetUp()
         //       {
@@ -49,24 +54,37 @@ namespace NeuroLIM_APITesing.Test
             var client = new RestClient(APIRequestConstants.APIBaseURL);
             //var request = new RestRequest("api/reactant-lists?page={PageNumber}&pageSize={PageSize}&ownedReactantListsOnly={OwnedRLOnly}&SortMetadata[0].Field={SortMetaData}&SortMetadata[0].Direction={SortMetaDataDirection}&isActive={ActiveFlage}", Method.GET);
             var request = new RestRequest(APIRequestConstants.ReactantListURL, Method.GET);
-
-            request.AddQueryParameter("page", "1");
-            request.AddQueryParameter("pageSize", "10");
-            request.AddQueryParameter("ownedReactantListsOnly", "true");
-            request.AddQueryParameter("SortMetadata[0].Field", "updatedAt");
-            request.AddQueryParameter("SortMetadata[0].Direction", "-1");
-            request.AddQueryParameter("isActive", "true");
-
+            
+                request.AddQueryParameter("page", "1");
+                request.AddQueryParameter("pageSize", "10");
+                request.AddQueryParameter("ownedReactantListsOnly", "true");
+                request.AddQueryParameter("SortMetadata[0].Field", "updatedAt");
+                request.AddQueryParameter("SortMetadata[0].Direction", "-1");
+                request.AddQueryParameter("isActive", "true");
+            
+           
 
             request.AddHeader(APIRequestConstants.AuthorizationHeaderKey, $"Bearer {this.currentContextToken}");
 
-            //            var content = client.Execute(request).StatusCode;
-            var response = client.Execute(request);
+            //  var content = client.Execute(request).StatusCode;
 
+            IRestResponse response= null;
+            try
+            {
+                 response = client.Execute(request);
+            }
+            catch 
+            {
+                log.Error($"TestCase- {TestContext.CurrentContext.Test.Name} - request failure");
+
+            }
             var rl = new JsonDeserializer().Deserialize<ReactantListResponse>(response);
+
+           
             //Assert
             Assert.AreEqual(System.Net.HttpStatusCode.OK, response.StatusCode);
             Assert.IsTrue(rl.results.Count <= 10);
+            log.Info($"TestCase- {TestContext.CurrentContext.Test.Name} - Success");
         }
 
         [Test, Order(1)]
@@ -78,27 +96,40 @@ namespace NeuroLIM_APITesing.Test
             var client = new RestClient(APIRequestConstants.APIBaseURL);
             var request = new RestRequest(APIRequestConstants.ReactantListURL, Method.POST);
 
-            ReactantListRequestBody reactantListRequestBody = new ReactantListRequestBody()
-            {
-                Name = "APITest-RL-" + random.Next().ToString(),
-                Description = "",
-                ReactantIds = new List<int>() { 1, 3 }
-            };
+            
+                ReactantListRequestBody reactantListRequestBody = new ReactantListRequestBody()
+               
+                {
+                    Name = "APITest-RL-" + random.Next().ToString(),
+                    Description = "",
+                    ReactantIds = new List<int>() { 1, 3}
+                };
+            
+        
             request.AddJsonBody(reactantListRequestBody);//.Body = new RequestBody("application/json","", reactantListRequestBody);
 
             request.AddHeader(APIRequestConstants.AuthorizationHeaderKey, $"Bearer {this.currentContextToken}");
 
-
-
             //Act
-            var response = client.Execute(request);
-            createdReactantListID =int.Parse(response.Content);
+            IRestResponse response = null;
+            try
+            {
+                response = client.Execute(request);
+                createdReactantListID = int.Parse(response.Content);
+            }
+            catch 
+            {
+                log.Error($"TestCase- {TestContext.CurrentContext.Test.Name} - request failure");
+            }
             var statusCode = response.StatusCode;
 
             //Assert
             Assert.AreEqual(System.Net.HttpStatusCode.OK, statusCode);
+            log.Info($"TestCase- {TestContext.CurrentContext.Test.Name} - Success");
+
         }
 
+        
 
         [Test, Order(3)]
         public void ReactantListEdit()
@@ -119,11 +150,24 @@ namespace NeuroLIM_APITesing.Test
             request.AddHeader(APIRequestConstants.AuthorizationHeaderKey, $"Bearer {this.currentContextToken}");
 
             //Act
-            var statusCode = client.Execute(request).StatusCode;
-            //Assert
-            Assert.AreEqual(System.Net.HttpStatusCode.OK, statusCode);
-        }
+            IRestResponse respone = null;
+  
+            try
+            {
+                respone = client.Execute(request);
+            }
+            catch 
+            {
+                log.Error($"TestCase- {TestContext.CurrentContext.Test.Name} - request failure");
 
+            }
+          //  var statusCode = respone.StatusCode;
+            //Assert
+            Assert.AreEqual(System.Net.HttpStatusCode.OK, respone.StatusCode);
+            log.Info($"TestCase- {TestContext.CurrentContext.Test.Name} - Success");
+
+        }
+        
 
         [Test, Order(4)]
       
@@ -137,14 +181,25 @@ namespace NeuroLIM_APITesing.Test
             request.AddHeader(APIRequestConstants.AuthorizationHeaderKey, $"Bearer {this.currentContextToken}");
 
             //Act
-            var statusCode = client.Execute(request).StatusCode;
+            IRestResponse respone = null;
+            try
+            {
+                respone = client.Execute(request);
+            }
+            catch
+            { 
+            }
+          //  var statusCode = client.Execute(request).StatusCode;
             //Assert
-            Assert.AreEqual(System.Net.HttpStatusCode.OK, statusCode);
+            Assert.AreEqual(System.Net.HttpStatusCode.OK, respone.StatusCode);
+            log.Info($"TestCase- {TestContext.CurrentContext.Test.Name} - Success");
+
         }
 
         public void TearDown()
         {
 
         }
+        
     }
 }
